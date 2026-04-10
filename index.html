@@ -21,7 +21,27 @@
 </head>
 <body>
   <h2>Cohen-Sutherland</h2>
-  <canvas id="canvas" width="280" height="280"></canvas>
+  <canvas <h2>Cohen-Sutherland</h2>
+
+<div>
+  <b>Viewport:</b>
+  xMin: <input id="vxmin" type="number" value="60">
+  yMin: <input id="vymin" type="number" value="60">
+  xMax: <input id="vxmax" type="number" value="200">
+  yMax: <input id="vymax" type="number" value="200">
+</div>
+
+<div>
+  <b>Línea:</b>
+  x1: <input id="lx1" type="number" value="20">
+  y1: <input id="ly1" type="number" value="130">
+  x2: <input id="lx2" type="number" value="260">
+  y2: <input id="ly2" type="number" value="180">
+</div>
+
+<button onclick="ejecutar()">Recortar</button>
+<p id="resultado"></p>
+<canvas id="canvas" width="280" height="280"></canvas>></canvas>
 
   <script>
   const canvas = document.getElementById("canvas");
@@ -38,19 +58,57 @@
     return code;
   }
 
-  // Prueba en consola (F12)
-  const W = { x1:60, y1:60, x2:200, y2:200 };
-  console.log("(20,100) →",  calcularOutcode(20,  100, W)); // LEFT = 1
-  console.log("(130,130) →", calcularOutcode(130, 130, W)); // INSIDE = 0
-  console.log("(250,30) →",  calcularOutcode(250, 30,  W)); // RIGHT + TOP = 10
+  function cohenSutherland(ax, ay, bx, by, W) {
+    let oa = calcularOutcode(ax, ay, W);
+    let ob = calcularOutcode(bx, by, W);
 
-  ctx.strokeStyle = "#0F6E56";
-  ctx.lineWidth = 2;
+    while (true) {
+      if ((oa | ob) === INSIDE) return { ax, ay, bx, by, ok: true };  // OR → aceptar
+      if ((oa & ob) !== INSIDE) return { ok: false };                  // AND → rechazar
+
+      const o = oa ? oa : ob;
+      let x, y;
+
+      if      (o & BOTTOM) { x = ax + (bx-ax) * (W.y2-ay) / (by-ay); y = W.y2; }
+      else if (o & TOP)    { x = ax + (bx-ax) * (W.y1-ay) / (by-ay); y = W.y1; }
+      else if (o & RIGHT)  { y = ay + (by-ay) * (W.x2-ax) / (bx-ax); x = W.x2; }
+      else                 { y = ay + (by-ay) * (W.x1-ax) / (bx-ax); x = W.x1; }
+
+      if (o === oa) { ax = x; ay = y; oa = calcularOutcode(ax, ay, W); }
+      else          { bx = x; by = y; ob = calcularOutcode(bx, by, W); }
+    }
+  }
+
+ function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+function ejecutar() {
+  const W  = { x1: v("vxmin"), y1: v("vymin"), x2: v("vxmax"), y2: v("vymax") };
+  const ax = v("lx1"), ay = v("ly1");
+  const bx = v("lx2"), by = v("ly2");
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Línea original
+  ctx.strokeStyle = "#ccc";
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+
+  // Viewport
+  ctx.strokeStyle = "black";
   ctx.strokeRect(W.x1, W.y1, W.x2 - W.x1, W.y2 - W.y1);
-  ctx.fillStyle = "#0F6E56";
-  ctx.font = "11px sans-serif";
-  ctx.fillText("viewport", W.x1 + 3, W.y1 - 5);
-</script>
+
+  // Algoritmo
+  const res = cohenSutherland(ax, ay, bx, by, W);
+
+  if (res.ok) {
+    ctx.strokeStyle = "blue";
+    ctx.beginPath(); ctx.moveTo(res.ax, res.ay); ctx.lineTo(res.bx, res.by); ctx.stroke();
+  }
+
+  document.getElementById("resultado").textContent =
+    res.ok ? "Línea recortada" : "Línea rechazada";
+}
+
+ejecutar();
   </script>
 </body>
 </html>
