@@ -24,15 +24,33 @@
   <canvas id="canvas" width="280" height="280"></canvas>
 
   <script>
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
 
-    ctx.strokeStyle = "#0F6E56";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(60, 60, 140, 140);
-    ctx.fillStyle = "#0F6E56";
-    ctx.font = "11px sans-serif";
-    ctx.fillText("viewport", 63, 55);
+  const INSIDE=0, LEFT=1, RIGHT=2, BOTTOM=4, TOP=8;
+
+  function calcularOutcode(x, y, W) {
+    let code = INSIDE;
+    if      (x < W.x1) code |= LEFT;
+    else if (x > W.x2) code |= RIGHT;
+    if      (y < W.y1) code |= TOP;
+    else if (y > W.y2) code |= BOTTOM;
+    return code;
+  }
+
+  // Prueba en consola (F12)
+  const W = { x1:60, y1:60, x2:200, y2:200 };
+  console.log("(20,100) →",  calcularOutcode(20,  100, W)); // LEFT = 1
+  console.log("(130,130) →", calcularOutcode(130, 130, W)); // INSIDE = 0
+  console.log("(250,30) →",  calcularOutcode(250, 30,  W)); // RIGHT + TOP = 10
+
+  ctx.strokeStyle = "#0F6E56";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(W.x1, W.y1, W.x2 - W.x1, W.y2 - W.y1);
+  ctx.fillStyle = "#0F6E56";
+  ctx.font = "11px sans-serif";
+  ctx.fillText("viewport", W.x1 + 3, W.y1 - 5);
+</script>
   </script>
 </body>
 </html>
